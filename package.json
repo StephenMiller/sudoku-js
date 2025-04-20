@@ -1,0 +1,15 @@
+{
+    "scripts": {
+        "start": "parcel public/index.html --open",
+        "build": "parcel build public/index.html"
+    },
+    "devDependencies": {
+        "parcel": "^2.14.4"
+    },
+    "name": "sudoku",
+    "version": "1.0.0",
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "description": ""
+}

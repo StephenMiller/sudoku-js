@@ -44,7 +44,7 @@
     height: 100%;
     font-size: 0.6rem;
   }
-  
+
   .pencils span {
     display: flex;
     align-items: center;
@@ -54,3 +54,54 @@
   .cell.conflict {
     background-color: rgba(255, 0, 0, 0.4);
   }
+
+  /* Selected cell glow */
+.cell.selected {
+    box-shadow: 0 0 8px yellow;
+  }
+  
+  /* Hint styles */
+  .pencils span.hint-single {
+    background-color: yellow;
+  }
+  .pencils span.hint-row {
+    background-color: orange
+  }
+  .pencils span.hint-col {
+    background-color: lightgreen;
+  }
+
+  /* Gray background for original clues */
+.cell.fixed {
+    background-color: gray;
+  }
+
+  /* make all cell borders light by default */
+.cell {
+    border: 1px solid #999;
+  }
+  
+  /* thick vertical line after every 3rd column */
+.cell:nth-child(3n) {
+    border-right: 3px solid #333;
+  }
+  
+  /* thick horizontal line after every 3rd row
+     (27 cells per 3 rows: 3 rows × 9 columns) */
+.cell:nth-child(27n) {
+    border-bottom: 2px solid #333;
+  }
+
+  /* Vertical bold lines between 3×3 blocks (before columns 4 & 7) */
+.cell:nth-child(3n+1){
+    border-left: 3px solid #333;
+  }
+  
+  /* Horizontal bold lines between 3×3 blocks
+     ‑ row 4 (cells 28–36) and row 7 (cells 55–63) */
+  .cell:nth-child(n+28):nth-child(-n+36),
+  .cell:nth-child(n+55):nth-child(-n+63) {
+    border-top: 3px solid #333;
+  }
+  
+  
