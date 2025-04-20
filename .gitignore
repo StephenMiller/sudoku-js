@@ -1,0 +1,13 @@
+[200~# Node modules
+node_modules/
+
+# Build output
+dist/
+build/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# IDE settings
+.vscode/~
