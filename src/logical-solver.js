@@ -261,6 +261,112 @@ function createLockedCandidateStep({
   };
 }
 
+
+export function findLockedCandidatePatterns(grid, eliminations = new Set()) {
+  assertValidGrid(grid);
+  const candidates = buildCandidateMap(grid, eliminations);
+  const patterns = [];
+  const seen = new Set();
+
+  for (let box = 0; box < GRID_SIZE; box++) {
+    const startRow = Math.floor(box / BOX_SIZE) * BOX_SIZE;
+    const startCol = (box % BOX_SIZE) * BOX_SIZE;
+    const boxCells = [];
+
+    for (let row = startRow; row < startRow + BOX_SIZE; row++) {
+      for (let col = startCol; col < startCol + BOX_SIZE; col++) {
+        boxCells.push([row, col]);
+      }
+    }
+
+    for (const value of DIGITS) {
+      const sourceCells = boxCells.filter(([row, col]) =>
+        candidates.get(`${row},${col}`)?.includes(value),
+      );
+
+      if (sourceCells.length < 2) continue;
+
+      const rows = new Set(sourceCells.map(([row]) => row));
+      if (rows.size === 1) {
+        const [row] = rows;
+        const key = `pointing-row-${box}-${row}-${value}`;
+
+        if (!seen.has(key)) {
+          seen.add(key);
+          patterns.push({
+            technique: 'locked-candidate',
+            mode: 'pointing',
+            value,
+            sourceUnit: 'box',
+            sourceUnitIndex: box,
+            targetUnit: 'row',
+            targetUnitIndex: row,
+            sourceCells,
+          });
+        }
+      }
+
+      const cols = new Set(sourceCells.map(([, col]) => col));
+      if (cols.size === 1) {
+        const [col] = cols;
+        const key = `pointing-column-${box}-${col}-${value}`;
+
+        if (!seen.has(key)) {
+          seen.add(key);
+          patterns.push({
+            technique: 'locked-candidate',
+            mode: 'pointing',
+            value,
+            sourceUnit: 'box',
+            sourceUnitIndex: box,
+            targetUnit: 'column',
+            targetUnitIndex: col,
+            sourceCells,
+          });
+        }
+      }
+    }
+  }
+
+  for (const type of ['row', 'column']) {
+    for (let index = 0; index < GRID_SIZE; index++) {
+      const unitCells = Array.from({ length: GRID_SIZE }, (_, offset) =>
+        type === 'row' ? [index, offset] : [offset, index],
+      );
+
+      for (const value of DIGITS) {
+        const sourceCells = unitCells.filter(([row, col]) =>
+          candidates.get(`${row},${col}`)?.includes(value),
+        );
+
+        if (sourceCells.length < 2) continue;
+
+        const boxes = new Set(sourceCells.map(([row, col]) => getBoxIndex(row, col)));
+        if (boxes.size !== 1) continue;
+
+        const [box] = boxes;
+        const key = `claiming-${type}-${index}-${box}-${value}`;
+
+        if (!seen.has(key)) {
+          seen.add(key);
+          patterns.push({
+            technique: 'locked-candidate',
+            mode: 'claiming',
+            value,
+            sourceUnit: type,
+            sourceUnitIndex: index,
+            targetUnit: 'box',
+            targetUnitIndex: box,
+            sourceCells,
+          });
+        }
+      }
+    }
+  }
+
+  return patterns;
+}
+
 export function findLockedCandidates(grid, eliminations = new Set()) {
   assertValidGrid(grid);
   const candidates = buildCandidateMap(grid, eliminations);
