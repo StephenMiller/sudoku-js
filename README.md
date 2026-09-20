@@ -4,6 +4,7 @@ A small JavaScript Sudoku engine for generating complete boards and uniquely sol
 
 ## Current capabilities
 
+- Solve with human-style Phase 1 logic: naked singles and hidden singles, with structured reasoning steps and no guessing.
 - Generate a complete valid Sudoku solution.
 - Generate a puzzle with an exact requested number of removals.
 - Verify whether a partial grid has a unique solution.
@@ -31,6 +32,12 @@ import {
   generatePuzzle,
   generateSolution,
 } from './src/solver.js';
+
+import {
+  getCandidates,
+  nextLogicalStep,
+  solveLogically,
+} from './src/logical-solver.js';
 ```
 
 `generatePuzzle(removals)` guarantees the requested number of removed cells or throws if it cannot reach that target within its configured attempt limit.
