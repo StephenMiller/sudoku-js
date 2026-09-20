@@ -1,13 +1,14 @@
-[200~# Node modules
+# Dependencies
 node_modules/
 
-# Build output
+# Build and coverage output
 dist/
 build/
+coverage/
 
 # OS artifacts
 .DS_Store
 Thumbs.db
 
 # IDE settings
-.vscode/~
+.vscode/
