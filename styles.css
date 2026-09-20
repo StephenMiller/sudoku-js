@@ -339,10 +339,6 @@ h1 {
   place-items: center;
 }
 
-.cell input:not(:placeholder-shown) + .pencil-marks {
-  display: none;
-}
-
 @media (max-width: 600px) {
   .pencil-marks {
     font-size: clamp(0.42rem, 2.1vw, 0.7rem);
