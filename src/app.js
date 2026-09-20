@@ -1,7 +1,9 @@
 import { generatePuzzle } from './solver.js';
 import {
   applyLogicalStep,
+  applyLogicalStepToState,
   findHiddenSingles,
+  findLockedCandidates,
   findNakedSingles,
   getCandidates,
   nextLogicalStep,
@@ -24,6 +26,7 @@ let pendingStep = null;
 let appliedSteps = 0;
 let pickerTarget = null;
 let automaticPencilMarks = true;
+let logicalEliminations = new Set();
 
 function cloneGrid(grid) {
   return grid.map((row) => [...row]);
@@ -50,9 +53,20 @@ function describeStep(step) {
     };
   }
 
+  if (step.technique === 'locked-candidate') {
+    const mode = step.reason.mode === 'pointing' ? 'Pointing' : 'Claiming';
+    const source = `${step.reason.sourceUnit} ${step.reason.sourceUnitIndex + 1}`;
+    const target = `${step.reason.targetUnit} ${step.reason.targetUnitIndex + 1}`;
+
+    return {
+      title: `${mode} locked candidate`,
+      text: `Candidate ${step.value} is confined within ${source}, so it can be eliminated from ${step.eliminations.length} cell${step.eliminations.length === 1 ? '' : 's'} in ${target}.`,
+    };
+  }
+
   return {
     title: 'Logical step',
-    text: `Place ${step.value} at R${row}C${col}.`,
+    text: `Apply the ${step.technique} deduction.`,
   };
 }
 
@@ -111,6 +125,7 @@ function updateBoardValue(row, col, value) {
   board[row][col] = value;
   pendingStep = null;
   highlightedCell = null;
+  logicalEliminations = new Set();
   logicalStatus.textContent = 'Not analyzed';
   setReasoning('Board changed', 'Ask for the next logical step when you are ready.');
 }
@@ -121,7 +136,7 @@ function getCellCandidates(row, col) {
   }
 
   try {
-    return getCandidates(board, row, col);
+    return getCandidates(board, row, col, logicalEliminations);
   } catch {
     return [];
   }
@@ -130,21 +145,28 @@ function getCellCandidates(row, col) {
 function getPencilMarkHighlights() {
   const nakedSingles = new Set();
   const hiddenSingles = new Set();
+  const lockedCandidates = new Set();
 
   try {
-    for (const step of findNakedSingles(board)) {
+    for (const step of findNakedSingles(board, logicalEliminations)) {
       nakedSingles.add(`${step.row},${step.col},${step.value}`);
     }
 
-    for (const step of findHiddenSingles(board)) {
+    for (const step of findHiddenSingles(board, logicalEliminations)) {
       hiddenSingles.add(`${step.row},${step.col},${step.value}`);
+    }
+
+    for (const step of findLockedCandidates(board, logicalEliminations)) {
+      for (const [row, col] of step.reason.sourceCells) {
+        lockedCandidates.add(`${row},${col},${step.value}`);
+      }
     }
   } catch {
     // An invalid user-entered board can temporarily prevent logical analysis.
     // Candidate marks still render; technique colors simply stay off.
   }
 
-  return { nakedSingles, hiddenSingles };
+  return { nakedSingles, hiddenSingles, lockedCandidates };
 }
 
 function createPencilMarks(row, col, highlights) {
@@ -165,6 +187,8 @@ function createPencilMarks(row, col, highlights) {
         mark.classList.add('naked-single');
       } else if (highlights.hiddenSingles.has(key)) {
         mark.classList.add('hidden-single');
+      } else if (highlights.lockedCandidates.has(key)) {
+        mark.classList.add('locked-candidate');
       }
     }
 
@@ -179,7 +203,7 @@ function renderBoard() {
   gridElement.innerHTML = '';
   const pencilMarkHighlights = automaticPencilMarks
     ? getPencilMarkHighlights()
-    : { nakedSingles: new Set(), hiddenSingles: new Set() };
+    : { nakedSingles: new Set(), hiddenSingles: new Set(), lockedCandidates: new Set() };
 
   for (let row = 0; row < 9; row++) {
     for (let col = 0; col < 9; col++) {
@@ -249,6 +273,7 @@ function startNewPuzzle() {
     pendingStep = null;
     highlightedCell = null;
     appliedSteps = 0;
+    logicalEliminations = new Set();
     stepCount.textContent = '0';
     logicalStatus.textContent = 'Not analyzed';
     setReasoning('New puzzle', 'The board is ready. Try solving it yourself or ask for a logical step.');
@@ -262,23 +287,22 @@ function showNextStep() {
   board = readBoardFromInputs();
 
   try {
-    pendingStep = nextLogicalStep(board);
+    pendingStep = nextLogicalStep(board, logicalEliminations);
 
     if (!pendingStep) {
       highlightedCell = null;
       logicalStatus.textContent = 'Stuck';
       setReasoning(
-        'No Phase 1 deduction found',
-        'The current solver cannot make another move using naked or hidden singles. It will not guess.',
+        'No supported deduction found',
+        'The current solver cannot make another move using singles or locked candidates. It will not guess.',
       );
       renderBoard();
       return;
     }
 
-    highlightedCell = {
-      row: pendingStep.row,
-      col: pendingStep.col,
-    };
+    highlightedCell = pendingStep.action === 'place'
+      ? { row: pendingStep.row, col: pendingStep.col }
+      : null;
 
     const description = describeStep(pendingStep);
     logicalStatus.textContent = 'Step available';
@@ -297,7 +321,16 @@ function applyPendingStep() {
   }
 
   try {
-    board = applyLogicalStep(board, pendingStep);
+    if (pendingStep.action === 'place') {
+      board = applyLogicalStep(board, pendingStep);
+    } else {
+      const state = applyLogicalStepToState(
+        { grid: board, eliminations: logicalEliminations },
+        pendingStep,
+      );
+      board = state.grid;
+      logicalEliminations = state.eliminations;
+    }
     appliedSteps++;
     stepCount.textContent = String(appliedSteps);
     pendingStep = null;
@@ -317,6 +350,7 @@ function solveCurrentBoardLogically() {
   try {
     const result = solveLogically(board);
     board = result.grid;
+    logicalEliminations = new Set(result.eliminations);
     appliedSteps += result.steps.length;
     stepCount.textContent = String(appliedSteps);
     pendingStep = null;
@@ -326,13 +360,13 @@ function solveCurrentBoardLogically() {
       logicalStatus.textContent = 'Solved';
       setReasoning(
         'Solved logically',
-        `The solver finished the puzzle using ${result.steps.length} Phase 1 logical steps and no guessing.`,
+        `The solver finished the puzzle using ${result.steps.length} logical steps and no guessing.`,
       );
     } else {
       logicalStatus.textContent = 'Stuck';
       setReasoning(
         'Reached current logic limit',
-        `The solver applied ${result.steps.length} logical steps, then stopped because naked and hidden singles were no longer enough.`,
+        `The solver applied ${result.steps.length} logical steps, then stopped because the currently supported techniques were no longer enough.`,
       );
     }
 
@@ -348,6 +382,7 @@ function resetPuzzle() {
   pendingStep = null;
   highlightedCell = null;
   appliedSteps = 0;
+  logicalEliminations = new Set();
   stepCount.textContent = '0';
   logicalStatus.textContent = 'Not analyzed';
   setReasoning('Reset', 'The puzzle has been restored to its starting state.');
