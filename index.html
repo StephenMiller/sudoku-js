@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sudoku</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">SUDOKU</p>
+        <h1>Think it through.</h1>
+        <p class="subtitle">A Sudoku app with a solver that explains its logic instead of guessing.</p>
+      </div>
+
+      <div class="header-actions">
+        <label class="control">
+          <span>Blanks</span>
+          <input id="removals-input" type="number" min="0" max="64" value="40">
+        </label>
+        <button id="new-puzzle-button" class="primary">New Puzzle</button>
+      </div>
+    </header>
+
+    <section class="workspace">
+      <div class="board-panel">
+        <div id="sudoku-grid" class="sudoku-grid" aria-label="Sudoku grid"></div>
+
+        <div class="board-actions">
+          <button id="hint-button">Show Next Logical Step</button>
+          <button id="apply-step-button">Apply Step</button>
+          <button id="solve-logically-button">Solve Logically</button>
+          <button id="reset-button">Reset</button>
+        </div>
+      </div>
+
+      <aside class="reasoning-panel">
+        <div class="reasoning-card">
+          <p class="eyebrow">REASONING</p>
+          <h2 id="reasoning-title">Ready</h2>
+          <p id="reasoning-text">Generate a puzzle, enter values, or ask for the next logical step.</p>
+        </div>
+
+        <div class="status-card">
+          <div>
+            <span class="status-label">Logical status</span>
+            <strong id="logical-status">Not analyzed</strong>
+          </div>
+          <div>
+            <span class="status-label">Steps applied</span>
+            <strong id="step-count">0</strong>
+          </div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
