@@ -344,3 +344,22 @@ h1 {
     font-size: clamp(0.42rem, 2.1vw, 0.7rem);
   }
 }
+
+
+/* Logical pencil-mark color vocabulary:
+   yellow = naked single (highest priority)
+   blue = hidden single
+   future: green = locked candidate; purple = pair/triple */
+.pencil-marks span.naked-single {
+  background: #f8e58b;
+  color: #2b260e;
+  border-radius: 0.2rem;
+  font-weight: 800;
+}
+
+.pencil-marks span.hidden-single {
+  background: #cfe3f6;
+  color: #173956;
+  border-radius: 0.2rem;
+  font-weight: 750;
+}
