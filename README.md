@@ -4,6 +4,7 @@ A browser-based Sudoku app backed by a generator, uniqueness verifier, and human
 
 ## Current capabilities
 
+- Run as a local browser app.
 - Solve with human-style Phase 1 logic: naked singles and hidden singles, with structured reasoning steps and no guessing.
 - Generate a complete valid Sudoku solution.
 - Generate a puzzle with an exact requested number of removals.
@@ -15,12 +16,23 @@ A browser-based Sudoku app backed by a generator, uniqueness verifier, and human
 
 The current recursive search is infrastructure: it generates boards and verifies uniqueness. It is **not** intended to become the project's long-term human-style solver.
 
-A future logical solver should reason in explicit Sudoku techniques (singles, pairs, box-line interactions, and progressively more advanced strategies), record why each step is valid, and support hints and difficulty grading. Search/backtracking can remain underneath as a verification oracle.
+The logical solver reasons in explicit Sudoku techniques and returns structured explanation steps. Search/backtracking remains underneath as a generation and uniqueness oracle.
 
-## Usage
+## Run locally
 
 ```bash
 npm start
+```
+
+Then open:
+
+```text
+http://localhost:4173
+```
+
+Run the test suite with:
+
+```bash
 npm test
 ```
 
