@@ -1,6 +1,7 @@
 import { generatePuzzle } from './solver.js';
 import {
   applyLogicalStep,
+  getCandidates,
   nextLogicalStep,
   solveLogically,
 } from './logical-solver.js';
@@ -12,6 +13,7 @@ const logicalStatus = document.getElementById('logical-status');
 const stepCount = document.getElementById('step-count');
 const removalsInput = document.getElementById('removals-input');
 const numberPicker = document.getElementById('number-picker');
+const pencilMarksToggle = document.getElementById('pencil-marks-toggle');
 
 let puzzle = [];
 let board = [];
@@ -19,6 +21,7 @@ let highlightedCell = null;
 let pendingStep = null;
 let appliedSteps = 0;
 let pickerTarget = null;
+let automaticPencilMarks = true;
 
 function cloneGrid(grid) {
   return grid.map((row) => [...row]);
@@ -110,6 +113,33 @@ function updateBoardValue(row, col, value) {
   setReasoning('Board changed', 'Ask for the next logical step when you are ready.');
 }
 
+function getCellCandidates(row, col) {
+  if (!automaticPencilMarks || board[row][col] !== 0) {
+    return [];
+  }
+
+  try {
+    return getCandidates(board, row, col);
+  } catch {
+    return [];
+  }
+}
+
+function createPencilMarks(row, col) {
+  const marks = document.createElement('div');
+  marks.className = 'pencil-marks';
+
+  const candidates = new Set(getCellCandidates(row, col));
+
+  for (let value = 1; value <= 9; value++) {
+    const mark = document.createElement('span');
+    mark.textContent = candidates.has(value) ? String(value) : '';
+    marks.appendChild(mark);
+  }
+
+  return marks;
+}
+
 function renderBoard() {
   closeNumberPicker();
   gridElement.innerHTML = '';
@@ -147,6 +177,7 @@ function renderBoard() {
         const value = input.value === '' ? 0 : Number(input.value);
         updateBoardValue(row, col, value);
         closeNumberPicker();
+        renderBoard();
       });
 
       input.addEventListener('click', (event) => {
@@ -162,6 +193,11 @@ function renderBoard() {
       });
 
       cell.appendChild(input);
+
+      if (automaticPencilMarks && board[row][col] === 0) {
+        cell.appendChild(createPencilMarks(row, col));
+      }
+
       gridElement.appendChild(cell);
     }
   }
@@ -291,7 +327,7 @@ numberPicker.addEventListener('click', (event) => {
   input.value = value === 0 ? '' : String(value);
   updateBoardValue(row, col, value);
   closeNumberPicker();
-  input.focus({ preventScroll: true });
+  renderBoard();
 });
 
 document.addEventListener('click', (event) => {
@@ -302,6 +338,11 @@ document.addEventListener('click', (event) => {
   ) {
     closeNumberPicker();
   }
+});
+
+pencilMarksToggle.addEventListener('change', () => {
+  automaticPencilMarks = pencilMarksToggle.checked;
+  renderBoard();
 });
 
 window.addEventListener('resize', closeNumberPicker);
