@@ -18,9 +18,20 @@ These ideas should inform the future logical solver in `sudoku-js`, but the old 
 
 The nine nonblank puzzle strings from `Game.startingGrids` have been moved into `test/fixtures/legacy-puzzles.js`.
 
-They are useful as a regression corpus because they span the difficulty labels used by the old project and include two named GLS puzzles. The current search engine verifies that each salvaged puzzle is uniquely solvable.
+They are useful as a regression corpus and preserve the old project's labeled examples. Each fixture now records its **verified** solution count under the current search engine.
 
-The legacy difficulty labels are preserved only as historical names. They should not be treated as validated difficulty ratings until a logical difficulty grader exists.
+Seven are uniquely solvable.
+
+Two legacy examples are not:
+
+- `very-hard` has at least two solutions
+- `diabolical` has at least two solutions
+
+Because `countSolutions` deliberately stops at two, those values mean "non-unique," not necessarily "exactly two."
+
+That discovery is itself worth preserving: the old difficulty labels and puzzle assumptions were not validated. These two grids may still be useful later as negative tests, but they should never be served as normal generated puzzles.
+
+The legacy difficulty labels are retained only as historical names. They are not validated difficulty ratings.
 
 ## Keep later: UX ideas
 
