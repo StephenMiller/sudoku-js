@@ -3,6 +3,7 @@ import {
   applyLogicalStep,
   applyLogicalStepToState,
   findHiddenSingles,
+  findLockedCandidatePatterns,
   findLockedCandidates,
   findNakedSingles,
   getCandidates,
@@ -156,9 +157,9 @@ function getPencilMarkHighlights() {
       hiddenSingles.add(`${step.row},${step.col},${step.value}`);
     }
 
-    for (const step of findLockedCandidates(board, logicalEliminations)) {
-      for (const [row, col] of step.reason.sourceCells) {
-        lockedCandidates.add(`${row},${col},${step.value}`);
+    for (const pattern of findLockedCandidatePatterns(board, logicalEliminations)) {
+      for (const [row, col] of pattern.sourceCells) {
+        lockedCandidates.add(`${row},${col},${pattern.value}`);
       }
     }
   } catch {
