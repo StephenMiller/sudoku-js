@@ -11,12 +11,14 @@ const reasoningText = document.getElementById('reasoning-text');
 const logicalStatus = document.getElementById('logical-status');
 const stepCount = document.getElementById('step-count');
 const removalsInput = document.getElementById('removals-input');
+const numberPicker = document.getElementById('number-picker');
 
 let puzzle = [];
 let board = [];
 let highlightedCell = null;
 let pendingStep = null;
 let appliedSteps = 0;
+let pickerTarget = null;
 
 function cloneGrid(grid) {
   return grid.map((row) => [...row]);
@@ -65,7 +67,51 @@ function readBoardFromInputs() {
   );
 }
 
+function closeNumberPicker() {
+  pickerTarget = null;
+  numberPicker.hidden = true;
+  numberPicker.style.removeProperty('top');
+  numberPicker.style.removeProperty('left');
+  gridElement.querySelectorAll('.cell.selected').forEach((cell) => cell.classList.remove('selected'));
+}
+
+function positionNumberPicker(cellElement) {
+  const cellRect = cellElement.getBoundingClientRect();
+  const pickerRect = numberPicker.getBoundingClientRect();
+  const padding = 10;
+
+  let left = cellRect.left + cellRect.width / 2 - pickerRect.width / 2;
+  let top = cellRect.bottom + 8;
+
+  left = Math.max(padding, Math.min(left, window.innerWidth - pickerRect.width - padding));
+  if (top + pickerRect.height > window.innerHeight - padding) {
+    top = cellRect.top - pickerRect.height - 8;
+  }
+
+  numberPicker.style.left = `${left}px`;
+  numberPicker.style.top = `${Math.max(padding, top)}px`;
+}
+
+function openNumberPicker(row, col, cellElement, input) {
+  if (puzzle[row][col] !== 0) return;
+
+  closeNumberPicker();
+  pickerTarget = { row, col, input };
+  cellElement.classList.add('selected');
+  numberPicker.hidden = false;
+  requestAnimationFrame(() => positionNumberPicker(cellElement));
+}
+
+function updateBoardValue(row, col, value) {
+  board[row][col] = value;
+  pendingStep = null;
+  highlightedCell = null;
+  logicalStatus.textContent = 'Not analyzed';
+  setReasoning('Board changed', 'Ask for the next logical step when you are ready.');
+}
+
 function renderBoard() {
+  closeNumberPicker();
   gridElement.innerHTML = '';
 
   for (let row = 0; row < 9; row++) {
@@ -98,12 +144,21 @@ function renderBoard() {
 
       input.addEventListener('input', () => {
         input.value = input.value.replace(/[^1-9]/g, '').slice(0, 1);
-        board = readBoardFromInputs();
-        pendingStep = null;
-        highlightedCell = null;
-        logicalStatus.textContent = 'Not analyzed';
-        setReasoning('Board changed', 'Ask for the next logical step when you are ready.');
-        renderBoard();
+        const value = input.value === '' ? 0 : Number(input.value);
+        updateBoardValue(row, col, value);
+        closeNumberPicker();
+      });
+
+      input.addEventListener('click', (event) => {
+        if (input.disabled) return;
+        event.stopPropagation();
+        openNumberPicker(row, col, cell, input);
+      });
+
+      cell.addEventListener('click', () => {
+        if (input.disabled) return;
+        input.focus({ preventScroll: true });
+        openNumberPicker(row, col, cell, input);
       });
 
       cell.appendChild(input);
@@ -225,6 +280,32 @@ function resetPuzzle() {
   setReasoning('Reset', 'The puzzle has been restored to its starting state.');
   renderBoard();
 }
+
+numberPicker.addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-value]');
+  if (!button || !pickerTarget) return;
+
+  const value = Number(button.dataset.value);
+  const { row, col, input } = pickerTarget;
+
+  input.value = value === 0 ? '' : String(value);
+  updateBoardValue(row, col, value);
+  closeNumberPicker();
+  input.focus({ preventScroll: true });
+});
+
+document.addEventListener('click', (event) => {
+  if (
+    !numberPicker.hidden &&
+    !numberPicker.contains(event.target) &&
+    !event.target.closest('.cell')
+  ) {
+    closeNumberPicker();
+  }
+});
+
+window.addEventListener('resize', closeNumberPicker);
+window.addEventListener('scroll', closeNumberPicker, true);
 
 document.getElementById('new-puzzle-button').addEventListener('click', startNewPuzzle);
 document.getElementById('hint-button').addEventListener('click', showNextStep);
