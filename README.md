@@ -1,6 +1,6 @@
 # sudoku-js
 
-A small JavaScript Sudoku engine for generating complete boards and uniquely solvable puzzles.
+A browser-based Sudoku app backed by a generator, uniqueness verifier, and human-style logical solver.
 
 ## Current capabilities
 
