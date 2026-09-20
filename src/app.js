@@ -147,6 +147,7 @@ function getPencilMarkHighlights() {
   const nakedSingles = new Set();
   const hiddenSingles = new Set();
   const lockedCandidates = new Set();
+  const eliminatedCandidates = new Set();
 
   try {
     for (const step of findNakedSingles(board, logicalEliminations)) {
@@ -162,12 +163,25 @@ function getPencilMarkHighlights() {
         lockedCandidates.add(`${row},${col},${pattern.value}`);
       }
     }
+
+    for (const step of findLockedCandidates(board, logicalEliminations)) {
+      for (const elimination of step.eliminations) {
+        eliminatedCandidates.add(
+          `${elimination.row},${elimination.col},${elimination.value}`,
+        );
+      }
+    }
   } catch {
     // An invalid user-entered board can temporarily prevent logical analysis.
     // Candidate marks still render; technique colors simply stay off.
   }
 
-  return { nakedSingles, hiddenSingles, lockedCandidates };
+  return {
+    nakedSingles,
+    hiddenSingles,
+    lockedCandidates,
+    eliminatedCandidates,
+  };
 }
 
 function createPencilMarks(row, col, highlights) {
@@ -188,6 +202,8 @@ function createPencilMarks(row, col, highlights) {
         mark.classList.add('naked-single');
       } else if (highlights.hiddenSingles.has(key)) {
         mark.classList.add('hidden-single');
+      } else if (highlights.eliminatedCandidates.has(key)) {
+        mark.classList.add('candidate-elimination');
       } else if (highlights.lockedCandidates.has(key)) {
         mark.classList.add('locked-candidate');
       }
@@ -204,7 +220,12 @@ function renderBoard() {
   gridElement.innerHTML = '';
   const pencilMarkHighlights = automaticPencilMarks
     ? getPencilMarkHighlights()
-    : { nakedSingles: new Set(), hiddenSingles: new Set(), lockedCandidates: new Set() };
+    : {
+        nakedSingles: new Set(),
+        hiddenSingles: new Set(),
+        lockedCandidates: new Set(),
+        eliminatedCandidates: new Set(),
+      };
 
   for (let row = 0; row < 9; row++) {
     for (let col = 0; col < 9; col++) {
