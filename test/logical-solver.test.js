@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 
 import {
   applyLogicalStep,
+  applyLogicalStepToState,
+  createLogicalState,
   findHiddenSingles,
+  findLockedCandidates,
   findNakedSingles,
   getCandidates,
   nextLogicalStep,
@@ -64,6 +67,38 @@ test('findHiddenSingles detects a value with one legal location in a unit', () =
   );
 });
 
+test('findLockedCandidates detects pointing or claiming eliminations', () => {
+  const grid = parseGridCode(
+    '530070000600195000098000060800060003400803001700020006060000280000419005000080079',
+  );
+
+  const steps = findLockedCandidates(grid);
+
+  assert.ok(steps.length > 0);
+  assert.ok(steps.every((step) => step.technique === 'locked-candidate'));
+  assert.ok(steps.every((step) => step.action === 'eliminate'));
+  assert.ok(steps.every((step) => step.eliminations.length > 0));
+  assert.ok(steps.some((step) => ['pointing', 'claiming'].includes(step.reason.mode)));
+});
+
+test('locked-candidate eliminations persist in logical state', () => {
+  const grid = parseGridCode(
+    '530070000600195000098000060800060003400803001700020006060000280000419005000080079',
+  );
+  const state = createLogicalState(grid);
+  const step = findLockedCandidates(grid)[0];
+  const target = step.eliminations[0];
+
+  const next = applyLogicalStepToState(state, step);
+
+  assert.ok(
+    !getCandidates(next.grid, target.row, target.col, next.eliminations)
+      .includes(target.value),
+  );
+  assert.equal(state.eliminations.size, 0);
+  assert.ok(next.eliminations.size > 0);
+});
+
 test('nextLogicalStep prefers naked singles before hidden singles', () => {
   const grid = solvedGrid.map((row) => [...row]);
   grid[0][0] = 0;
@@ -102,7 +137,9 @@ test('solveLogically never guesses when phase-1 techniques are insufficient', ()
 
   assert.ok(['solved', 'stuck'].includes(result.status));
   for (const step of result.steps) {
-    assert.ok(['naked-single', 'hidden-single'].includes(step.technique));
+    assert.ok(
+      ['naked-single', 'hidden-single', 'locked-candidate'].includes(step.technique),
+    );
   }
 });
 
