@@ -1,6 +1,8 @@
 import { generatePuzzle } from './solver.js';
 import {
   applyLogicalStep,
+  findHiddenSingles,
+  findNakedSingles,
   getCandidates,
   nextLogicalStep,
   solveLogically,
@@ -125,7 +127,27 @@ function getCellCandidates(row, col) {
   }
 }
 
-function createPencilMarks(row, col) {
+function getPencilMarkHighlights() {
+  const nakedSingles = new Set();
+  const hiddenSingles = new Set();
+
+  try {
+    for (const step of findNakedSingles(board)) {
+      nakedSingles.add(`${step.row},${step.col},${step.value}`);
+    }
+
+    for (const step of findHiddenSingles(board)) {
+      hiddenSingles.add(`${step.row},${step.col},${step.value}`);
+    }
+  } catch {
+    // An invalid user-entered board can temporarily prevent logical analysis.
+    // Candidate marks still render; technique colors simply stay off.
+  }
+
+  return { nakedSingles, hiddenSingles };
+}
+
+function createPencilMarks(row, col, highlights) {
   const marks = document.createElement('div');
   marks.className = 'pencil-marks';
 
@@ -133,7 +155,19 @@ function createPencilMarks(row, col) {
 
   for (let value = 1; value <= 9; value++) {
     const mark = document.createElement('span');
-    mark.textContent = candidates.has(value) ? String(value) : '';
+
+    if (candidates.has(value)) {
+      mark.textContent = String(value);
+
+      const key = `${row},${col},${value}`;
+
+      if (highlights.nakedSingles.has(key)) {
+        mark.classList.add('naked-single');
+      } else if (highlights.hiddenSingles.has(key)) {
+        mark.classList.add('hidden-single');
+      }
+    }
+
     marks.appendChild(mark);
   }
 
@@ -143,6 +177,9 @@ function createPencilMarks(row, col) {
 function renderBoard() {
   closeNumberPicker();
   gridElement.innerHTML = '';
+  const pencilMarkHighlights = automaticPencilMarks
+    ? getPencilMarkHighlights()
+    : { nakedSingles: new Set(), hiddenSingles: new Set() };
 
   for (let row = 0; row < 9; row++) {
     for (let col = 0; col < 9; col++) {
@@ -195,7 +232,7 @@ function renderBoard() {
       cell.appendChild(input);
 
       if (automaticPencilMarks && board[row][col] === 0) {
-        cell.appendChild(createPencilMarks(row, col));
+        cell.appendChild(createPencilMarks(row, col, pencilMarkHighlights));
       }
 
       gridElement.appendChild(cell);
