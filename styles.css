@@ -381,3 +381,71 @@ h1 {
   text-decoration: line-through;
   text-decoration-thickness: 1px;
 }
+
+
+.reasoning-log-card {
+  padding: 1.25rem;
+  border: 1px solid #d3cdc3;
+  border-radius: 0.8rem;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.reasoning-log {
+  max-height: 32rem;
+  overflow-y: auto;
+  display: grid;
+  gap: 0.85rem;
+  padding-right: 0.2rem;
+}
+
+.reasoning-log-empty {
+  margin: 0;
+  color: #827c72;
+  font-size: 0.9rem;
+}
+
+.reasoning-log-entry {
+  padding-top: 0.85rem;
+  border-top: 1px solid #ddd7cc;
+}
+
+.reasoning-log-entry:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.reasoning-log-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.35rem;
+}
+
+.reasoning-log-number {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 999px;
+  background: #ece7de;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.reasoning-log-action,
+.reasoning-log-explanation {
+  margin: 0;
+}
+
+.reasoning-log-action {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #2e2b27;
+}
+
+.reasoning-log-explanation {
+  margin-top: 0.25rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: #625d55;
+}

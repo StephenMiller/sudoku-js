@@ -19,6 +19,7 @@ const stepCount = document.getElementById('step-count');
 const removalsInput = document.getElementById('removals-input');
 const numberPicker = document.getElementById('number-picker');
 const pencilMarksToggle = document.getElementById('pencil-marks-toggle');
+const reasoningLog = document.getElementById('reasoning-log');
 
 let puzzle = [];
 let board = [];
@@ -28,6 +29,7 @@ let appliedSteps = 0;
 let pickerTarget = null;
 let automaticPencilMarks = true;
 let logicalEliminations = new Set();
+let reasoningEntries = [];
 
 function cloneGrid(grid) {
   return grid.map((row) => [...row]);
@@ -74,6 +76,80 @@ function describeStep(step) {
 function setReasoning(title, text) {
   reasoningTitle.textContent = title;
   reasoningText.textContent = text;
+}
+
+function formatStepForLog(step) {
+  const description = describeStep(step);
+
+  if (step.action === 'place') {
+    return {
+      technique: description.title,
+      action: `Place ${step.value} at R${step.row + 1}C${step.col + 1}`,
+      explanation: description.text,
+    };
+  }
+
+  const eliminated = (step.eliminations ?? [])
+    .map(({ row, col, value }) => `R${row + 1}C${col + 1}≠${value}`)
+    .join(', ');
+
+  return {
+    technique: description.title,
+    action: eliminated ? `Eliminate ${eliminated}` : 'Eliminate candidates',
+    explanation: description.text,
+  };
+}
+
+function renderReasoningLog() {
+  reasoningLog.innerHTML = '';
+
+  if (reasoningEntries.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'reasoning-log-empty';
+    empty.textContent = 'No logical steps applied yet.';
+    reasoningLog.appendChild(empty);
+    return;
+  }
+
+  reasoningEntries.forEach((entry, index) => {
+    const item = document.createElement('article');
+    item.className = 'reasoning-log-entry';
+
+    const heading = document.createElement('div');
+    heading.className = 'reasoning-log-heading';
+
+    const number = document.createElement('span');
+    number.className = 'reasoning-log-number';
+    number.textContent = String(index + 1);
+
+    const technique = document.createElement('strong');
+    technique.textContent = entry.technique;
+
+    heading.append(number, technique);
+
+    const action = document.createElement('p');
+    action.className = 'reasoning-log-action';
+    action.textContent = entry.action;
+
+    const explanation = document.createElement('p');
+    explanation.className = 'reasoning-log-explanation';
+    explanation.textContent = entry.explanation;
+
+    item.append(heading, action, explanation);
+    reasoningLog.appendChild(item);
+  });
+
+  reasoningLog.scrollTop = reasoningLog.scrollHeight;
+}
+
+function appendReasoningStep(step) {
+  reasoningEntries.push(formatStepForLog(step));
+  renderReasoningLog();
+}
+
+function resetReasoningLog() {
+  reasoningEntries = [];
+  renderReasoningLog();
 }
 
 function readBoardFromInputs() {
@@ -296,6 +372,7 @@ function startNewPuzzle() {
     highlightedCell = null;
     appliedSteps = 0;
     logicalEliminations = new Set();
+    resetReasoningLog();
     stepCount.textContent = '0';
     logicalStatus.textContent = 'Not analyzed';
     setReasoning('New puzzle', 'The board is ready. Try solving it yourself or ask for a logical step.');
@@ -353,6 +430,7 @@ function applyPendingStep() {
       board = state.grid;
       logicalEliminations = state.eliminations;
     }
+    appendReasoningStep(pendingStep);
     appliedSteps++;
     stepCount.textContent = String(appliedSteps);
     pendingStep = null;
@@ -373,6 +451,9 @@ function solveCurrentBoardLogically() {
     const result = solveLogically(board);
     board = result.grid;
     logicalEliminations = new Set(result.eliminations);
+    for (const step of result.steps) {
+      appendReasoningStep(step);
+    }
     appliedSteps += result.steps.length;
     stepCount.textContent = String(appliedSteps);
     pendingStep = null;
@@ -405,6 +486,7 @@ function resetPuzzle() {
   highlightedCell = null;
   appliedSteps = 0;
   logicalEliminations = new Set();
+  resetReasoningLog();
   stepCount.textContent = '0';
   logicalStatus.textContent = 'Not analyzed';
   setReasoning('Reset', 'The puzzle has been restored to its starting state.');
@@ -448,4 +530,5 @@ document.getElementById('apply-step-button').addEventListener('click', applyPend
 document.getElementById('solve-logically-button').addEventListener('click', solveCurrentBoardLogically);
 document.getElementById('reset-button').addEventListener('click', resetPuzzle);
 
+renderReasoningLog();
 startNewPuzzle();
