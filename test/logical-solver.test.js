@@ -6,6 +6,7 @@ import {
   applyLogicalStepToState,
   createLogicalState,
   findHiddenSingles,
+  findLockedCandidatePatterns,
   findLockedCandidates,
   findNakedSingles,
   getCandidates,
@@ -79,6 +80,30 @@ test('findLockedCandidates detects pointing or claiming eliminations', () => {
   assert.ok(steps.every((step) => step.action === 'eliminate'));
   assert.ok(steps.every((step) => step.eliminations.length > 0));
   assert.ok(steps.some((step) => ['pointing', 'claiming'].includes(step.reason.mode)));
+});
+
+test('locked-candidate visualization includes structural patterns without eliminations', () => {
+  const grid = parseGridCode(
+    '530070000600195000098000060800060003400803001700020006060000280000419005000080079',
+  );
+
+  const patterns = findLockedCandidatePatterns(grid);
+  const actionable = findLockedCandidates(grid);
+
+  assert.ok(patterns.length >= actionable.length);
+
+  for (const step of actionable) {
+    assert.ok(
+      patterns.some((pattern) =>
+        pattern.mode === step.reason.mode &&
+        pattern.value === step.value &&
+        pattern.sourceUnit === step.reason.sourceUnit &&
+        pattern.sourceUnitIndex === step.reason.sourceUnitIndex &&
+        pattern.targetUnit === step.reason.targetUnit &&
+        pattern.targetUnitIndex === step.reason.targetUnitIndex
+      ),
+    );
+  }
 });
 
 test('locked-candidate eliminations persist in logical state', () => {
